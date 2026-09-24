@@ -1,19 +1,66 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>DOIng Research Software</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/2.2.1/pdfjs-dist.min.js" integrity="sha256-Bz9mM/Db3XebnH0var6b4F6zVfA1Qe/B+2afYYQy4=" crossorigin="anonymous"></script>
-  <script src="script.js"></script>
-</head>
-<body>
-  <h1>Upload a PDF and search for "github.com/"</h1>
-  <form id="file-upload">
-    <input type="file" id="pdf-file" accept=".pdf">
-    <button type="submit">Search PDF</button>
-  </form>
-  <div id="result"></div>
-  <script>
-    // script.js will be loaded from the next step
-  </script>
-</body>
+  <head>
+    <title>DOIng Research Software</title>
+  </head>
+  <body>
+    <h1>Upload a PDF and search for "github.com/"</h1>
+    <form id="file-upload">
+      <input type="file" id="pdf-file" accept=".pdf">
+      <button type="submit">Search PDF</button>
+    </form>
+    <div id="result"></div>
+    <script>
+      const form = document.getElementById('file-upload');
+      const resultDiv = document.getElementById('result');
+      const fileInput = document.getElementById('pdf-file');
+      const pdfjsLib = window.PDFJS;
+
+      // Listen for form submission
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        if (file) {
+          // Create a PDF reader instance
+          const pdfReader = new pdfjsLib.PDFReader(file);
+
+          // Get the text from the PDF
+          const pdfText = '';
+          pdfReader.getContents().then((pages) => {
+            for (let i = 0; i < pages.length; i++) {
+              const page = pages.get(i);
+              const { numWords, words } = page;
+              pdfText += page.extractWithLayout().then((layout) => {
+                // Get the text from the page
+                const pageText = layout.extractText();
+                // Add the text to pdfText
+                pdfText += pageText;
+              });
+            }
+
+            // Search for "github.com/"
+            const searchQuery = 'github.com/';
+            const regex = new RegExp(searchQuery, 'gi');
+            const matches = pdfText.match(regex);
+
+            if (matches) {
+              const startIndex = pdfText.indexOf(matches[0]);
+              const endIndex = startIndex + matches[0].length;
+              const beforeText = pdfText.substring(startIndex - 100, startIndex);
+              const afterText = pdfText.substring(endIndex, endIndex + 100);
+
+              // Display the result
+              resultDiv.innerHTML = `
+                <h2>Found "github.com/" at position ${startIndex}:</h2>
+                <p>Before: ${beforeText}</p>
+                <p>After: ${afterText}</p>
+              `;
+            } else {
+              resultDiv.innerHTML = 'Not found.';
+            }
+          });
+        }
+      });
+    </script>
+  </body>
 </html>
